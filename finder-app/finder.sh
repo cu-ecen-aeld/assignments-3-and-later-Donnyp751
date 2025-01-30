@@ -1,5 +1,9 @@
 #!/bin/bash
-#
+# finder.sh filesdir searchstr
+# where
+# filesdir is the base directory to search for a file with the searchstr content
+# searchstr is the string to search for inside files contained in the filesdir
+
 
 filesdir=$1
 searchstr=$2

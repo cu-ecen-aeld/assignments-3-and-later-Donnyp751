@@ -1,5 +1,9 @@
 #!/bin/bash
-#
+# writer.sh writefile writestr
+# where
+# writefile is the path/filename to be created and written to
+# writestr is the string to be written into the file
+
 writefile=$1
 writestr=$2
 writedir=$(dirname "$writefile")
