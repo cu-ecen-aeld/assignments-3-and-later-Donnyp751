@@ -19,12 +19,11 @@ if [[ ! -d $filesdir ]]; then
 fi
 
 #search all files in filesdir for searchstr, then count the number of matches
-mLines=$(grep -r $searchstr $filesdir)
-mLineCount=$(grep -r $searchstr $filesdir | wc -l)
+mLineCount=$(find $filesdir -type f -exec grep -r $searchstr {} + | wc -l)
 
 #search all files in filesdir for searchstr, then count the number of files that contain matches
 
-mFileCount=$(find $filesdir -type f -name "*" -exec grep -l "$searchstr" {} + | uniq | wc -l)
+mFileCount=$(find $filesdir -type f | wc -l)
 
 
 
