@@ -1,4 +1,9 @@
 #include "systemcalls.h"
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -16,6 +21,15 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+
+    int ret = system(cmd);
+
+    if (ret)
+    {
+	int error = errno;
+	printf("System() failed with errno: %d\n", error);
+	return false;
+    }
 
     return true;
 }
@@ -43,11 +57,12 @@ bool do_exec(int count, ...)
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
+	printf("Arg[%d]: %s\n", i, command[i]);
     }
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    //command[count] = command[count];
 
 /*
  * TODO:
@@ -58,6 +73,43 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+
+    int pid = fork();
+    int child_status = 0;
+    if (pid < 0)
+    {
+	printf("Failed to fork with error %d\n", errno);
+	return false;
+    }
+    else if (!pid)
+    {
+	    //child
+	    printf("execv() %s \n", command[0]);
+	    int status = execv(command[0], command);
+	    //will only return if there is an error
+        if (status != 0)
+	    {
+	        printf("Failed to run execv(): %d\n", errno);
+	        exit(-1);
+	    }
+    }
+    else
+    {
+	//parent
+	int  wstatus = 0;
+	child_status = waitpid(pid, &wstatus, 0);
+	printf("After waitpid %d %d %d\n", child_status, pid, wstatus);
+	if (child_status < 0 || (WIFEXITED(wstatus) && (WEXITSTATUS(wstatus) != 0)))
+	{
+	    printf("Failed on wait with cs %d and wstatus %d\n", child_status, wstatus);
+	    return false;
+	}
+	else
+	{
+	    printf("Child was successful with cs %d and ws %d\n", child_status, wstatus);
+	}
+    }
+
 
     va_end(args);
 
@@ -82,7 +134,44 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    //command[count] = command[count];
+
+    int of_fd = open(outputfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (of_fd < 0)
+    {
+        perror("Failed to open outfile..");
+        exit(-1);
+    }
+
+    int kidpid;
+
+    switch (kidpid = fork()) {
+        case -1: perror("Fork failed"); abort();
+        case 0:
+            if (dup2(of_fd, 1) < 0)
+            {
+                perror("dup2 failed on outfile");
+                abort();
+            }
+            close(of_fd);
+            int ret = execv(command[0], command);
+            if (ret)
+            {
+                perror("Failed to call execv()");
+                abort();
+            }
+        default:
+            close(of_fd);
+            int wstatus = 0;
+            waitpid(kidpid, &wstatus, 0);
+            if ((WIFEXITED(wstatus) && (WEXITSTATUS(wstatus) != 0)))
+            {
+                perror("waitpid returned error status code\n");
+                abort();
+            }
+    }
+    
+
 
 
 /*
