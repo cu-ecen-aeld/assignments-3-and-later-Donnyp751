@@ -94,9 +94,8 @@ done
 # Make device nodes
 echo "Creating device nodes"
 #cant do this on a mounted device
-#cd ${ROOTFS}
-mknod -m 666 dev/null c 1 3
-mknod -m 666 dev/console c 5 1
+mknod -m 666 ${ROOTFS}/dev/null c 1 3
+mknod -m 666 ${ROOTFS}/dev/console c 5 1
 
 # TODO: Clean and build the writer utility
 
