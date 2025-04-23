@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # finder.sh filesdir searchstr
 # where
 # filesdir is the base directory to search for a file with the searchstr content

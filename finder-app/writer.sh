@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # writer.sh writefile writestr
 # where
 # writefile is the path/filename to be created and written to

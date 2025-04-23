@@ -70,36 +70,37 @@ then
 git clone git://busybox.net/busybox.git
     cd busybox
     git checkout ${BUSYBOX_VERSION}
-     cp ${FINDER_APP_DIR}/../conf/.bb_config ${OUTDIR}/busybox/.config
+    cp ${FINDER_APP_DIR}/../conf/.bb_config ${OUTDIR}/busybox/.config
 else
     cd busybox
 fi
 
 echo "Building Busybox"
+
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install CONFIG_PREFIX=${ROOTFS}
 
 #echo "Library dependencies"
-#interpreter=$(${CROSS_COMPILE}readelf -l ${ROOTFS}/bin/busybox | awk '/interpreter/ {print $NF}' | tr -d '[]')
-#interpreter=$(${CROSS_COMPILE}readelf -a ${ROOTFS}/bin/busybox | grep "program interpreter" |  grep -oP "/?[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*\.so\.[0-9]+")
-#echo "Interpreter: $interpreter"
-#libraries=$(${CROSS_COMPILE}readelf -a ${ROOTFS}/bin/busybox | grep "Shared library" |  grep -oP "/?[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*\.so\.[0-9]+")
+interpreter=$(${CROSS_COMPILE}readelf -l ${ROOTFS}/bin/busybox | awk '/interpreter/ {print $NF}' | tr -d '[]')
+interpreter=$(${CROSS_COMPILE}readelf -a ${ROOTFS}/bin/busybox | grep "program interpreter" |  grep -oP "/?[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*\.so\.[0-9]+")
+echo "Interpreter: $interpreter"
+libraries=$(${CROSS_COMPILE}readelf -a ${ROOTFS}/bin/busybox | grep "Shared library" |  grep -oP "/?[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*\.so\.[0-9]+")
 toolchain_libraries=${TOOLCHAIN_ROOTFS}/lib64
 
 
-#echo "Copying interpreter $interpreter from ${TOOLCHAIN_ROOTFS} to ${ROOTFS}"
-#cp ${TOOLCHAIN_ROOTFS}/$interpreter ${ROOTFS}/lib
+echo "Copying interpreter $interpreter from ${TOOLCHAIN_ROOTFS} to ${ROOTFS}"
+cp ${TOOLCHAIN_ROOTFS}/$interpreter ${ROOTFS}/lib
 
 ## Copy the libraries
-#echo "Copying libraries $libraries from $toolchain_libraries to ${ROOTFS}"
-#for l in $libraries; do
-#    cp $toolchain_libraries/$l ${ROOTFS}/lib
-#done
+echo "Copying libraries $libraries from $toolchain_libraries to ${ROOTFS}"
+for l in $libraries; do
+    cp $toolchain_libraries/$l ${ROOTFS}/lib64
+done
 
 # Make device nodes
 echo "Creating device nodes"
 #cant do this on a mounted device
-fakeroot mknod -m 666 ${ROOTFS}/dev/null c 1 3
-fakeroot mknod -m 666 ${ROOTFS}/dev/console c 5 1
+sudo mknod -m 666 ${ROOTFS}/dev/null c 1 3
+sudo mknod -m 622 ${ROOTFS}/dev/console c 5 1
 
 
 # TODO: Clean and build the writer utility
@@ -109,11 +110,11 @@ make -C ${FINDER_APP_DIR} CROSS_COMPILE=${CROSS_COMPILE} ARCH=${ARCH}
 
 # TODO: Copy the finder related scripts and executables to the /home directory
 # on the target rootfs
+cp ${FINDER_APP_DIR}/autorun-qemu.sh ${ROOTFS}/home
 cp ${FINDER_APP_DIR}/writer ${ROOTFS}/home
 cp ${FINDER_APP_DIR}/writer.sh ${ROOTFS}/home
 cp ${FINDER_APP_DIR}/finder.sh ${ROOTFS}/home
 cp ${FINDER_APP_DIR}/finder-test.sh ${ROOTFS}/home
-#cp ${FINDER_APP_DIR}/inittab ${ROOTFS}/etc/inittab
 cp ${FINDER_APP_DIR}/conf/*.txt ${ROOTFS}/home/conf
 
 # TODO: Chown the root directory
@@ -121,4 +122,4 @@ sudo chown -R root:root ${ROOTFS}
 
 # TODO: Create initramfs.cpio.gz
 cd "$OUTDIR/rootfs"
-find . | cpio -H newc -o | gzip > ${OUTDIR}/initramfs.cpio.gz
+find . | cpio -H newc -o --owner root:root | gzip > ${OUTDIR}/initramfs.cpio.gz
