@@ -25,6 +25,8 @@ else
 	echo "Using passed directory ${OUTDIR} for output"
 fi
 
+ROOTFS=${OUTDIR}/rootfs
+
 mkdir -p ${OUTDIR}
 
 cd "$OUTDIR"
@@ -76,26 +78,29 @@ fi
 echo "Building Busybox"
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install CONFIG_PREFIX=${ROOTFS}
 
-echo "Library dependencies"
-interpreter=$(${CROSS_COMPILE}readelf -a ${ROOTFS}/bin/busybox | grep "program interpreter" |  grep -oP "/?[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*\.so\.[0-9]+")
-libraries=$(${CROSS_COMPILE}readelf -a ${ROOTFS}/bin/busybox | grep "Shared library" |  grep -oP "/?[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*\.so\.[0-9]+")
+#echo "Library dependencies"
+#interpreter=$(${CROSS_COMPILE}readelf -l ${ROOTFS}/bin/busybox | awk '/interpreter/ {print $NF}' | tr -d '[]')
+#interpreter=$(${CROSS_COMPILE}readelf -a ${ROOTFS}/bin/busybox | grep "program interpreter" |  grep -oP "/?[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*\.so\.[0-9]+")
+#echo "Interpreter: $interpreter"
+#libraries=$(${CROSS_COMPILE}readelf -a ${ROOTFS}/bin/busybox | grep "Shared library" |  grep -oP "/?[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*\.so\.[0-9]+")
 toolchain_libraries=${TOOLCHAIN_ROOTFS}/lib64
 
 
-echo "Copying interpreter $interpreter from ${TOOLCHAIN_ROOTFS} to ${ROOTFS}"
-cp ${TOOLCHAIN_ROOTFS}/$interpreter ${ROOTFS}/lib
+#echo "Copying interpreter $interpreter from ${TOOLCHAIN_ROOTFS} to ${ROOTFS}"
+#cp ${TOOLCHAIN_ROOTFS}/$interpreter ${ROOTFS}/lib
 
-# Copy the libraries
-echo "Copying libraries $libraries from $toolchain_libraries to ${ROOTFS}"
-for l in $libraries; do
-    cp $toolchain_libraries/$l ${ROOTFS}/lib64
-done
+## Copy the libraries
+#echo "Copying libraries $libraries from $toolchain_libraries to ${ROOTFS}"
+#for l in $libraries; do
+#    cp $toolchain_libraries/$l ${ROOTFS}/lib
+#done
 
 # Make device nodes
 echo "Creating device nodes"
 #cant do this on a mounted device
-mknod -m 666 ${ROOTFS}/dev/null c 1 3
-mknod -m 666 ${ROOTFS}/dev/console c 5 1
+fakeroot mknod -m 666 ${ROOTFS}/dev/null c 1 3
+fakeroot mknod -m 666 ${ROOTFS}/dev/console c 5 1
+
 
 # TODO: Clean and build the writer utility
 
@@ -108,12 +113,12 @@ cp ${FINDER_APP_DIR}/writer ${ROOTFS}/home
 cp ${FINDER_APP_DIR}/writer.sh ${ROOTFS}/home
 cp ${FINDER_APP_DIR}/finder.sh ${ROOTFS}/home
 cp ${FINDER_APP_DIR}/finder-test.sh ${ROOTFS}/home
-
+#cp ${FINDER_APP_DIR}/inittab ${ROOTFS}/etc/inittab
 cp ${FINDER_APP_DIR}/conf/*.txt ${ROOTFS}/home/conf
 
 # TODO: Chown the root directory
+sudo chown -R root:root ${ROOTFS}
 
 # TODO: Create initramfs.cpio.gz
 cd "$OUTDIR/rootfs"
-find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
-gzip -f ${OUTDIR}/initramfs.cpio
+find . | cpio -H newc -o | gzip > ${OUTDIR}/initramfs.cpio.gz
