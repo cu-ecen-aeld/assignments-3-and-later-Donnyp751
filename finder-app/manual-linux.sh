@@ -99,8 +99,8 @@ done
 # Make device nodes
 echo "Creating device nodes"
 #cant do this on a mounted device
-sudo mknod -m 666 ${ROOTFS}/dev/null c 1 3
-sudo mknod -m 622 ${ROOTFS}/dev/console c 5 1
+#sudo mknod -m 666 ${ROOTFS}/dev/null c 1 3
+#sudo mknod -m 622 ${ROOTFS}/dev/console c 5 1
 
 
 # TODO: Clean and build the writer utility
@@ -121,5 +121,13 @@ cp ${FINDER_APP_DIR}/conf/*.txt ${ROOTFS}/home/conf
 sudo chown -R root:root ${ROOTFS}
 
 # TODO: Create initramfs.cpio.gz
-cd "$OUTDIR/rootfs"
-find . | cpio -H newc -o --owner root:root | gzip > ${OUTDIR}/initramfs.cpio.gz
+#cd "$OUTDIR/rootfs"
+#find . | cpio -H newc -o --owner root:root | gzip > ${OUTDIR}/initramfs.cpio.gz
+
+fakeroot bash -c '
+  mknod -m 666 ${ROOTFS}/dev/null c 1 3
+    mknod -m 622 ${ROOTFS}/dev/console c 5 1
+      cd ${ROOTFS}
+        find . | cpio -H newc -ov --owner root:root | gzip > ../initramfs.cpio.gz
+	'
+
