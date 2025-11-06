@@ -9,8 +9,8 @@ ARGS= -g
 
 all: aesdsocket
 
-aesdsocket: aesdsocket.c
-	$(CROSS_COMPILE)$(CC) $(ARGS) $< -o $@
+aesdsocket: aesdsocket.c linkedlist.c
+	$(CROSS_COMPILE)$(CC) $(ARGS) $^ -o $@
 
 
 clean:
