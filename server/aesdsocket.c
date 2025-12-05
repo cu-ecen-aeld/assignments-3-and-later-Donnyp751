@@ -15,7 +15,7 @@
 #include "linkedlist.h"
 
 #define SOCKET_PORT "9000"
-#define SOCKET_RECV_FILE "/var/tmp/aesdsocketdata"
+#define SOCKET_RECV_FILE "/dev/aesdchar"
 #define BUFFER_SIZE 1024
 
 volatile sig_atomic_t b_shutdown = 0;
