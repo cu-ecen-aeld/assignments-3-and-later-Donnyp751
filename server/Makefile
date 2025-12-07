@@ -3,7 +3,7 @@
 
 CC=gcc
 LD=ld
-ARGS= -g
+ARGS= -g -I../aesd-char-driver
 
 
 
